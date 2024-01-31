@@ -7,6 +7,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
+import time
 
 
 def process_pdf(pdf):
@@ -36,9 +37,12 @@ def get_embeddings(chunks):
 
 
 def generate_response(chain, history, query):
+    start_time = time.time()  # Record the start time
     result = chain(
         {"question": query, 'chat_history': history}, return_only_outputs=True)
-    return result["answer"]
+    end_time = time.time()  # Record the end time
+    response_time = end_time - start_time
+    return result["answer"], response_time
 
 
 # Main Function
@@ -64,12 +68,12 @@ def main():
             # Fetch the chat history from Streamlit's session state
             history = st.session_state.get('chat_history', [])
             # Generate a response based on the user's question and the chat history
-            response = generate_response(chain, history, query)
+            response, response_time = generate_response(chain, history, query)
 
             # Display the question and response
             st.write(f"User: {query}")
             st.write(f"ChatBot: {response}")
-
+            st.write(f"Response Time: {response_time}")
             # Update the chat history in the session state
             history.append({"role": "user", "content": query})
             history.append({"role": "assistant", "content": response})
