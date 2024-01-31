@@ -1,17 +1,16 @@
 import json
-
-import streamlit as st
-from dotenv import load_dotenv
+import time
+import uuid
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
-import time, uuid
-from flask import Flask, request
-from flask_cors import CORS
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+import streamlit as st
 
 def get_pdf_content(pdf_name):
     # Implement logic to access and extract text from the saved PDF based on session_id
@@ -40,37 +39,32 @@ def generate_response(chain, history, query):
     response_time = end_time - start_time
     return result["answer"], response_time
 
-# Flask API endpoint
-app = Flask(__name__)
-CORS(app)
+def create_app():
+    app = Flask(__name__)
+    CORS(app)
 
-@app.route('/get_chatbot_response/<session_id>/<pdf_name>/<query>', methods=['POST'])
-def get_chatbot_response(session_id, pdf_name, query):
-    query_question = query
-    # query_question = "What is Health ?"
-    print(query_question)
+    @app.route('/get_chatbot_response/<session_id>/<pdf_name>/<query>', methods=['POST'])
+    def get_chatbot_response(session_id, pdf_name, query):
+        query_question = query
+        print(query_question)
 
-    # text = get_pdf_content()  # Implement this function
-    text = get_pdf_content(pdf_name)
-    # ... your existing logic for generating a response using text and session_id ...
-    chunks = text_to_chunks(text)
-    vectorstore = get_embeddings(chunks)
+        text = get_pdf_content(pdf_name)
+        chunks = text_to_chunks(text)
+        vectorstore = get_embeddings(chunks)
 
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    chain = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0.3),
-                                                  retriever=vectorstore.as_retriever(), memory=memory)
-    history = st.session_state.get('chat_history', [])
-    # Generate a response based on the user's question and the chat history
-    response, response_time = generate_response(chain, history, query_question)
-    history.append({"role": "user", "content": query_question})
-    history.append({"role": "assistant", "content": response})
-    st.session_state.chat_history = history
+        memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+        chain = ConversationalRetrievalChain.from_llm(ChatOpenAI(temperature=0.3),
+                                                      retriever=vectorstore.as_retriever(), memory=memory)
+        history = st.session_state.get('chat_history', [])
+        response, response_time = generate_response(chain, history, query_question)
+        history.append({"role": "user", "content": query_question})
+        history.append({"role": "assistant", "content": response})
+        st.session_state.chat_history = history
 
-    return json.dumps({"response": response}), 200
+        return jsonify({"response": response}), 200
 
-
-
-
+    return app
 
 if __name__ == '__main__':
+    app = create_app()
     app.run(debug=True)

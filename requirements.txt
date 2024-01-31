@@ -7,6 +7,8 @@ tiktoken
 langchain-openai
 flask
 flask_cors
+requests
+
 
 
 
