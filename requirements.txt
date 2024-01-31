@@ -5,6 +5,8 @@ python-dotenv
 openai
 tiktoken
 langchain-openai
+flask
+flask_cors
 
 
 

@@ -7,7 +7,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-import time
+import time, uuid
 
 
 def process_pdf(pdf):
@@ -35,6 +35,8 @@ def get_embeddings(chunks):
     vectorstore = FAISS.from_texts(texts=chunks, embedding=embeddings)
     return vectorstore
 
+def generate_session_id():
+    return str(uuid.uuid4())
 
 def generate_response(chain, history, query):
     start_time = time.time()  # Record the start time
@@ -49,6 +51,9 @@ def generate_response(chain, history, query):
 def main():
     st.header('PDF CHATBOT ')
     load_dotenv()
+
+    session_id = generate_session_id()
+
     # upload a pdf file and extract text (200mb limit)
     pdf = st.file_uploader("Upload you PDF", type="pdf")
     query = st.text_input("Enter a question:", "")
@@ -79,6 +84,6 @@ def main():
             history.append({"role": "assistant", "content": response})
             st.session_state.chat_history = history
 
-
 if __name__ == '__main__':
     main()
+
