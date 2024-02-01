@@ -67,7 +67,7 @@ class PDFChatbot:
 
         # upload a pdf file and extract text (200mb limit)
         pdf = st.file_uploader("Upload your PDF", type="pdf")
-        query = st.text_area("Enter a question:", "")
+        query = st.text_input("Enter a question:", "")
 
         if pdf is not None:
             text = self.process_pdf(pdf)

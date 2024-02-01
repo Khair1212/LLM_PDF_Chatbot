@@ -43,7 +43,7 @@ def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    @app.route('/get_chatbot_response/<session_id>/<pdf_name>/<query>', methods=['POST'])
+    @app.route('/get_chatbot_response/<session_id>/<pdf_name>/<query>')
     def get_chatbot_response(session_id, pdf_name, query):
         query_question = query
         print(query_question)
