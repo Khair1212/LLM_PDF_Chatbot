@@ -45,28 +45,30 @@ class PDFChatbot:
             {"question": query, 'chat_history': self.history}, return_only_outputs=True)
         end_time = time.time()
         response_time = end_time - start_time
+
+        response = result.get("answer", "").strip()  # Get the answer and remove leading/trailing whitespaces
+
+        # Check if the response is empty or not relevant
+        if not response:
+            response = "I'm sorry, but I couldn't find a relevant answer to your question from the PDF."
+
         return result["answer"], response_time
 
-    def text_to_json(self, text):
-        try:
-            # Assuming text is in a valid JSON format
-            json_data = json.loads(text)
-            return json_data
-        except json.JSONDecodeError as e:
-            # If text is not in JSON format, handle the exception
-            st.error(f"Error decoding JSON: {e}")
-            return None
     def run_chatbot(self):
         st.header('PDF CHATBOT ')
         load_dotenv()
 
         # upload a pdf file and extract text (200mb limit)
         pdf = st.file_uploader("Upload your PDF", type="pdf")
-        query = st.text_input("Enter a question:", "")
+        query = st.text_area("Enter a question:", "")
 
         if pdf is not None:
             text = self.process_pdf(pdf)
             chunks = self.text_to_chunks(text)
+
+            if not chunks:
+                st.error("No text found in the uploaded PDF.")
+                return
             self.get_embeddings(chunks)
 
             memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
