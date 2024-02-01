@@ -12,6 +12,7 @@ import uuid, json
 
 
 class PDFChatbot:
+    # Initialize PDFChatbot instance
     def __init__(self):
         self.session_id = self.generate_session_id()
         self.vectorstore = None
@@ -20,9 +21,11 @@ class PDFChatbot:
 
     @staticmethod
     def generate_session_id():
+        # generate a unique session id using uuid
         return str(uuid.uuid4())
 
     def process_pdf(self, pdf):
+        # extract and return text from pdf
         pdf_reader = PdfReader(pdf)
         text = ""
         for page in pdf_reader.pages:
@@ -30,16 +33,19 @@ class PDFChatbot:
         return text
 
     def text_to_chunks(self, text):
+        # split texts into chunks for the processing
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_text(text)
         return chunks
 
     def get_embeddings(self, chunks):
+        # get embeddings (numeric form conversion) using OPENAI and create a vectorstore using FAISS
         embeddings = OpenAIEmbeddings()
         self.vectorstore = FAISS.from_texts(texts=chunks, embedding=embeddings)
         return self.vectorstore
 
     def generate_response(self, query):
+        # generate response using conversational retrieval chain and monitor time to generate response
         start_time = time.time()
         result = self.chain(
             {"question": query, 'chat_history': self.history}, return_only_outputs=True)
@@ -55,6 +61,7 @@ class PDFChatbot:
         return result["answer"], response_time
 
     def run_chatbot(self):
+        # Streamlit UI
         st.header('PDF CHATBOT ')
         load_dotenv()
 
@@ -66,11 +73,13 @@ class PDFChatbot:
             text = self.process_pdf(pdf)
             chunks = self.text_to_chunks(text)
 
+            # check if there is any text in the pdf
             if not chunks:
                 st.error("No text found in the uploaded PDF.")
                 return
             self.get_embeddings(chunks)
 
+            # create conversational retrieval chain using OpenAI and vectorstore
             memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
             self.chain = ConversationalRetrievalChain.from_llm(
                 ChatOpenAI(temperature=0.3),
@@ -87,10 +96,8 @@ class PDFChatbot:
                 st.write(f"User: {query}")
                 # st.write(f"ChatBot: {response}")
 
-                # json
+                # Display JSON data in streamlit
                 json_data = {"response": response}
-
-                # Display JSON data in Streamlit
                 st.write("Chatbot:")
                 st.json(json_data)
                 st.write(f"Response Time: {response_time}")
@@ -103,3 +110,4 @@ class PDFChatbot:
 if __name__ == '__main__':
     chatbot = PDFChatbot()
     chatbot.run_chatbot()
+
