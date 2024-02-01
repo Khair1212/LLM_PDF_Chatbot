@@ -8,7 +8,7 @@ from langchain_openai import ChatOpenAI
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 import time
-import uuid
+import uuid, json
 
 
 class PDFChatbot:
@@ -47,6 +47,15 @@ class PDFChatbot:
         response_time = end_time - start_time
         return result["answer"], response_time
 
+    def text_to_json(self, text):
+        try:
+            # Assuming text is in a valid JSON format
+            json_data = json.loads(text)
+            return json_data
+        except json.JSONDecodeError as e:
+            # If text is not in JSON format, handle the exception
+            st.error(f"Error decoding JSON: {e}")
+            return None
     def run_chatbot(self):
         st.header('PDF CHATBOT ')
         load_dotenv()
@@ -74,8 +83,16 @@ class PDFChatbot:
 
                 # Display the question and response
                 st.write(f"User: {query}")
-                st.write(f"ChatBot: {response}")
+                # st.write(f"ChatBot: {response}")
+
+                # json
+                json_data = {"response": response}
+
+                # Display JSON data in Streamlit
+                st.write("Chatbot:")
+                st.json(json_data)
                 st.write(f"Response Time: {response_time}")
+
                 # Update the chat history
                 self.history.append({"role": "user", "content": query})
                 self.history.append({"role": "assistant", "content": response})
